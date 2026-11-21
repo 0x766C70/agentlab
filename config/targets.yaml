@@ -5,6 +5,8 @@
 authorized_targets:
   - name: "maison"
     host: maison.766c70.com
+  - name: "azul"
+    host: azul.766c70.com
 
 agent:
   max_steps: 15     # budget max d actions par mission
