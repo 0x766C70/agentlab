@@ -1,1 +1,20 @@
+# Rapports de missions et logs : contenu contextuel, jamais versionné
 reports/
+logs/
+
+# Config locale et whitelist de cibles : PRIVE, ne jamais publier
+config.yaml
+config/targets.yaml
+
+# Clés et secrets éventuels
+*.key
+.env
+
+# Artefacts Python
+__pycache__/
+venv/
+*.pyc
+
+# Bonus courage : ne versionne que les .example
+!config/targets.yaml.example
+!config.yaml.example
