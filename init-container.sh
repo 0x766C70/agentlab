@@ -74,11 +74,18 @@ done
 echo "  IP obtenue via DHCP : $CUR_IP"
 
 incus exec "$CONTAINER" -- bash -c "
-  echo 'nameserver $DNS' > /etc/resolv.conf
+  # DNS du bridge (dnsmasq d Incus, IP = gateway) par defaut ;
+  # le dns: de la config ne sert que si on veut FORCER un resolver externe.
+  if [ -n \"$(cfg dns)\" ]; then echo 'nameserver $DNS' > /etc/resolv.conf;
+  else echo 'nameserver $GATEWAY' > /etc/resolv.conf; fi
   ping -c 2 -W 3 $GATEWAY >/dev/null || { echo 'ERREUR : gateway $GATEWAY injoignable.'; exit 1; }
   ping -c 2 -W 3 9.9.9.9   >/dev/null || { echo 'ERREUR : sortie Internet KO. Verifie ipv4.nat sur le bridge.'; exit 1; }
+  # Validation du DNS AVANT l apt (sinon apt bloque sans message)
+  if ! getent hosts deb.debian.org >/dev/null 2>&1; then
+    echo 'ERREUR : resolution DNS KO (resolver joignable mais muet ?).'; exit 1
+  fi
 " || die "reseau du conteneur injoignable (voir messages ci-dessus)"
-echo "  Reseau OK : gateway + Internet."
+echo "  Reseau OK : gateway + Internet + DNS."
 
 # ----------------------------------------------------------------
 step "[ETAPE C] Outils de recon"
@@ -86,8 +93,7 @@ step "[ETAPE C] Outils de recon"
 incus exec "$CONTAINER" -- bash -c '
   apt-get update -qq &&
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-    python3 python3-pip python3-yaml python3-flask \
-    nmap curl whois dnsutils netcat-openbsd &&
+    python3 python3-pip python3-venv python3-yaml nmap curl whois dnsutils netcat-openbsd &&
   apt-get clean
 ' || die "apt a echoue dans le conteneur"
 echo "  Outils installes (nmap, curl, dig...)"
@@ -132,7 +138,7 @@ agent:
 EOF
 
   cat > "$PROJECT_DIR"/requirements.txt <<'EOF'
-mistralai>=1.0.0
+mistralai>=1.0.0,<2.0.0
 pyyaml>=6.0
 flask>=3.0
 EOF
@@ -396,10 +402,13 @@ step "[ETAPE F] Push du code + dependances Python"
 incus file push -r "$PROJECT_DIR"/. "$CONTAINER"/app/ \
   || die "push a echoue : project_dir=$PROJECT_DIR est-il correct dans la config ?"
 incus exec "$CONTAINER" -- chown -R operator:operator /app
+# Venv dédié (évite les collisions pip --user / modules apt, cause de l' ImportError mistralai)
 incus exec "$CONTAINER" -- sudo -u operator bash -c '
-  cd /app && pip install --break-system-packages --user -q -r requirements.txt
-' || die "pip a echoue dans le conteneur"
-echo "  Code pousse dans /app, dependances installees."
+  python3 -m venv /app/venv &&
+  /app/venv/bin/pip install -q -r /app/requirements.txt &&
+  PYTHONNOUSERSITE=1 /app/venv/bin/python -c "import mistralai, flask, yaml; print(\"imports OK\")"
+' || die "installation du venv ou des dependances a echoue"
+echo "  Code pousse dans /app, venv + dependances OK."
 
 # ----------------------------------------------------------------
 step "[ETAPE G] Snapshot propre + recap"
