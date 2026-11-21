@@ -1,0 +1,27 @@
+# AgentLab — configuration de l'hôte
+# Copie ce fichier vers ~/.config/pentest/config.yaml (ou ./config.yaml)
+# et adapte les valeurs à ton infrastructure.
+
+# Nom du conteneur Incus qui héberge l'agent
+container: pentest-agent
+
+# Bridge réseau Incus auquel rattacher le conteneur (voir : incus network list)
+bridge: incusbr1
+
+# IP de la gateway du bridge (le bridge lui-même, voir incus network show <bridge>)
+gateway: 192.168.101.1
+
+# DNS de secours injecté dans le conteneur
+dns: 9.9.9.9
+
+# Image Incus du conteneur hôte
+image: images:debian/12
+
+# Dossier du code du projet (celui qui sera poussé dans /app)
+project_dir: .
+
+# Modèle Mistral utilisé par l'agent
+mistral_model: mistral-large-latest
+
+# NB : MISTRAL_API_KEY ne se met PAS ici — c'est un secret,
+# il se fournit par l'environnement :  export MISTRAL_API_KEY=...

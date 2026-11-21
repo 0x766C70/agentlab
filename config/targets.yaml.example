@@ -1,0 +1,12 @@
+# Copie ce fichier en config/targets.yaml et liste TES cibles autorisees.
+# L'agent refusera toute cible absente de cette liste.
+# N engage de pentest que sur des infrastructures qui t appartiennent
+# ou avec autorisation ecrite.
+authorized_targets:
+  - name: "Exemple : mon serveur (ma propriete)"
+    host: exemple.mondomaine.tld
+
+agent:
+  max_steps: 15     # budget max d actions par mission
+  dry_run: true     # true = chaque commande attend l approbation (y/N)
+  web_port: 8080    # port de l UI web dans le conteneur
