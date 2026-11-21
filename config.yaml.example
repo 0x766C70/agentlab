@@ -25,3 +25,7 @@ mistral_model: mistral-large-latest
 
 # NB : MISTRAL_API_KEY ne se met PAS ici — c'est un secret,
 # il se fournit par l'environnement :  export MISTRAL_API_KEY=...
+#
+
+# Report recipient
+report_email: monitoring@766c70.com
