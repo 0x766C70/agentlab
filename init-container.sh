@@ -187,8 +187,17 @@ def run_mission(objective: str, approve=None):
         )
         msg = resp.choices[0].message
 
+        # content peut etre une liste de fragments (ThinkChunk/ContentChunk)
+        def _txt(content):
+            if isinstance(content, str):
+                return content
+            if isinstance(content, list):
+                # on ne garde que le texte, le raisonnement (ThinkChunk) est ecarte
+                return "".join(getattr(c, "text", "") or "" for c in content)
+            return str(content or "")
+
         if not msg.tool_calls:
-            trace.append({"step": step+1, "type": "final", "text": msg.content})
+            trace.append({"step": step+1, "type": "final", "text": _txt(msg.content)})
             break
 
         messages.append(msg)
@@ -208,7 +217,7 @@ def run_mission(objective: str, approve=None):
             })
 
     for t in trace:
-        print(json.dumps(t, ensure_ascii=False))
+        print(json.dumps(t, ensure_ascii=False, default=str))
     return trace
 
 if __name__ == "__main__":
