@@ -18,7 +18,8 @@ ou agit seul (`dry_run: false`).
 - **Whitelist** : toute action sur un hôte absent de `config/targets.yaml` est refusée,  
 à la fois par le script hôte et par le garde-fou de l'agent.
 - **Snapshots Incus** : avant chaque mission et après l'init, rollback en une commande.  
-Créés en asynchrone via l'API (voir Dépannage).
+Créés en asynchrone via l'API (voir Dépannage). **Rétention : 5 snapshots max** —  
+les plus anciens sont supprimés automatiquement après chaque mission.
 - **Livraison des rapports** : envoi automatique par mail (`report_email`), aucune copie  
 conservée sur l'hôte en cas de succès.
 - **Mode planifié** : `pentest-monthly.sh` + crontab pour des recons récurrentes.
@@ -97,6 +98,7 @@ chmod 600 ~/.config/pentest/env
 ```bash
 ./cleanup.sh --status              # état, IP, snapshots
 ./cleanup.sh --restore avant-mission-20260101-120000   # rollback
+./cleanup.sh --prune-snapshots     # nettoyage manuel (garde 5 max)
 ./cleanup.sh --shell               # shell dans le conteneur
 ./cleanup.sh --recreate            # destroy + init complet
 ./cleanup.sh --destroy             # suppression définitive (avec confirmation)

@@ -5,6 +5,7 @@
 # Usage :
 #   ./cleanup.sh --status             # état, IP, snapshots (défaut)
 #   ./cleanup.sh --restore <snap>     # restaure un snapshot
+#   ./cleanup.sh --prune-snapshots    # garde 5 snapshots max, supprime les vieux
 #   ./cleanup.sh --shell              # shell dans le conteneur (user operator)
 #   ./cleanup.sh --destroy            # supprime définitivement le conteneur
 #   ./cleanup.sh --recreate           # destroy + init complet
@@ -21,6 +22,7 @@ while [ $# -gt 0 ]; do
     --config)   CONFIG_FILE="$2"; shift 2 ;;
     --status)   MODE="status"; shift ;;
     --restore)  MODE="restore"; SNAP="$2"; shift 2 ;;
+    --prune-snapshots) MODE="prune"; shift ;;
     --shell)    MODE="shell"; shift ;;
     --destroy)  MODE="destroy"; shift ;;
     --recreate) MODE="recreate"; shift ;;
@@ -57,6 +59,19 @@ case "$MODE" in
     echo "== Restauration de $CONTAINER sur le snapshot '$SNAP' =="
     incus snapshot restore "$CONTAINER" "$SNAP"
     echo "== Conteneur remis au snapshot '$SNAP' =="
+    ;;
+
+  prune)
+    echo "== Nettoyage des snapshots de $CONTAINER (garde 5 max) =="
+    incus snapshot list "$CONTAINER" --format csv 2>/dev/null | cut -d, -f1 \
+      | grep '^avant-mission-' | sort -r | tail -n +5 \
+      | while read -r old_snap; do
+          [ -n "$old_snap" ] || continue
+          incus snapshot delete "$CONTAINER" "$old_snap" 2>/dev/null \
+            && echo "  Supprimé : $old_snap"
+        done
+    echo "== Snapshots restants =="
+    incus snapshot list "$CONTAINER" 2>/dev/null || echo "  (aucun)"
     ;;
 
   shell)
